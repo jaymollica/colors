@@ -1,0 +1,14 @@
+/* line 1, ../sass/colors.scss */
+.scheme {
+  width: 660px;
+  height: 220px;
+  margin-bottom: 40px;
+  border: 2px solid black;
+}
+
+/* line 8, ../sass/colors.scss */
+.color {
+  width: 220px;
+  height: 220px;
+  float: left;
+}

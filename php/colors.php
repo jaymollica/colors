@@ -56,10 +56,10 @@
 
       $form = '';
       $form .= '<p>I am a...</p>';
-      $form .= '<form>';
+      $form .= '<form id="signUp">';
 
       foreach($status AS $s) {
-        $form .= '<div class="statusRow"><input type="radio" name="status" value="' . $s['id'] . '" />' . $s['description'] . '</div>';
+        $form .= '<div class="statusRow"><label><input type="radio" name="status" value="' . $s['short_desc'] . '" />' . $s['description'] . '</label></div>';
       }
 
       $form .= '<p>Email me with potential matches.</p>';
@@ -72,7 +72,30 @@
 
       return $form;
 
-    }         
+    }
+
+    public function signUp($status,$email) {
+
+      $parts = explode("4",$status);
+
+      print '<pre>'; print_r($parts); print '</pre>';
+
+      $sql = $this->_db->prepare("SELECT * FROM visitors WHERE email = ?");
+      $sql->execute(array($email));
+        if($sql->rowCount() > 0) {
+          $statuses = $sql->fetchAll(PDO::FETCH_ASSOC);
+
+        }
+        else {
+          $sql = $this->_db->prepare("INSERT INTO visitors (session_id,email,num_entries,gender,looking_for) VALUES (?,?,?,?,?)");
+          $sql->execute(array($_SESSION['visit_id'],$email,1,$parts[0],$parts[1]));
+        }
+
+
+      exit;
+
+    }
+
   }
 
 ?>

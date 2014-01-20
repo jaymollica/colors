@@ -15,6 +15,19 @@
     }
 
   }
+  elseif(isset($_REQUEST['signUp'])) {
+    if(isset($_REQUEST['status'])) {
+      $status = $_REQUEST['status'];
+    }
+    if(isset($_REQUEST['email'])) {
+      $email = $_REQUEST['email'];
+    }
+
+    $result = $colors->signUp($status,$email);
+
+    print '<p>Thank you.  You should recieve and email with potential matches shortly.</p>';
+
+  }
   else {
 
     $_SESSION['visit_id'] = $colors->startColor();
@@ -31,7 +44,5 @@
   foreach ($scheme AS $s) {
     print $s;
   }
-
-
 
 ?>

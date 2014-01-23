@@ -78,19 +78,34 @@
 
       $parts = explode("4",$status);
 
-      print '<pre>'; print_r($parts); print '</pre>';
-
       $sql = $this->_db->prepare("SELECT * FROM visitors WHERE email = ?");
       $sql->execute(array($email));
         if($sql->rowCount() > 0) {
-          $statuses = $sql->fetchAll(PDO::FETCH_ASSOC);
-
+          $res = $sql->fetch(PDO::FETCH_ASSOC);
+          $uid = $res['id'];
+          $sql = $this->_db->prepare("UPDATE visitors SET session_id = ?, num_entries = num_entries + 1, gender = ?, looking_for = ? WHERE email = ?");
+          $sql->execute(array($_SESSION['visit_id'],$parts[0],$parts[1],$email));
         }
         else {
           $sql = $this->_db->prepare("INSERT INTO visitors (session_id,email,num_entries,gender,looking_for) VALUES (?,?,?,?,?)");
           $sql->execute(array($_SESSION['visit_id'],$email,1,$parts[0],$parts[1]));
+          $uid = $sql->lastInsertId();
         }
 
+      foreach($_SESSION['choices'] AS $choice) {
+        $sql = $this->_db->prepare("SELECT * FROM scheme_likes WHERE scheme_id = ? AND user_id = ?");
+        $sql->execute(array($choice,$uid));
+        if($sql->rowCount() > 0) {
+          $sql = $this->_db->prepare("UPDATE scheme_likes SET num_likes = num_likes +1 WHERE scheme_id = ? AND user_id = ?");
+          $sql->execute(array($choice,$uid));
+        }
+        else {
+          $sql = $this->_db->prepare("INSERT INTO scheme_likes (scheme_id,user_id,num_likes) VALUES (?,?,1)");
+          $sql->execute(array($choice,$uid));
+        }
+      }
+
+      print '<p>Thank you, an email with any potential matches should arrive soon.</p>';
 
       exit;
 

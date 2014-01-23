@@ -1,0 +1,7 @@
+parameters:
+#    v_scolor.example.class: VS\colorBundle\Example
+
+services:
+#    v_scolor.example:
+#        class: %v_scolor.example.class%
+#        arguments: [@service_id, "plain_value", %parameter%]

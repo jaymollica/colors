@@ -87,9 +87,18 @@
           $sql->execute(array($_SESSION['visit_id'],$parts[0],$parts[1],$email));
         }
         else {
-          $sql = $this->_db->prepare("INSERT INTO visitors (session_id,email,num_entries,gender,looking_for) VALUES (?,?,?,?,?)");
-          $sql->execute(array($_SESSION['visit_id'],$email,1,$parts[0],$parts[1]));
-          $uid = $sql->lastInsertId();
+          while(TRUE) {
+           $guid = $this->randGuid();
+
+            $sql = $this->_db->prepare("SELECT * FROM visitors WHERE guid = ?");
+            $sql->execute(array($guid));
+            if($sql->rowCount() == 0) {
+              $sql = $this->_db->prepare("INSERT INTO visitors (session_id,email,num_entries,gender,looking_for,guid) VALUES (?,?,?,?,?,?)");
+              $sql->execute(array($_SESSION['visit_id'],$email,1,$parts[0],$parts[1],$guid));
+              $uid = $this->_db->lastInsertId();
+              break;
+            }
+          }
         }
 
       foreach($_SESSION['choices'] AS $choice) {
@@ -105,10 +114,82 @@
         }
       }
 
+      //return an array of matched email addresses
+      $matchedEmails = $this->getMatchesA($uid);
+
+      //compose email with potential matches
+      $matches = $this->emailMatches($matchedEmails,$email);
+
       print '<p>Thank you, an email with any potential matches should arrive soon.</p>';
 
       exit;
 
+    }
+
+    public function getMatchesA($uid) {
+
+      $sql = $this->_db->prepare("SELECT scheme_id FROM scheme_likes WHERE user_id = ?");
+      $sql->execute(array($uid));
+      if($sql->rowCount() > 0) {
+        $res = $sql->fetchAll();
+        foreach($res AS $row) {
+          $sid = $row['scheme_id'];
+          $sql = $this->_db->prepare("SELECT user_id FROM scheme_likes WHERE scheme_id = ? AND user_id != ?");
+          $sql->execute(array($sid,$uid));
+          if($sql->rowCount() > 0) {
+            while($users = $sql->fetch(PDO::FETCH_ASSOC)) {
+              $ids[] = $users['user_id'];;
+            }
+          }
+        }
+       
+        if(count($ids) > 0) {
+          $counts = array_count_values($ids);
+        
+          ksort($counts);
+
+          $i = 0;
+          foreach($counts AS $key => $val) {
+
+            $sql = $this->_db->prepare("SELECT * FROM visitors WHERE id = ?");
+            $sql->execute(array($key));
+
+            $res = $sql->fetch(PDO::FETCH_ASSOC);
+
+            $matches[] = $res['email'];
+
+            $i++;
+
+            if($i >= 4) {
+              break;
+            }
+
+          }
+
+          return $matches;
+
+        }
+        else {
+          print '<p>no match</p>';
+        }
+        
+      }
+
+    }
+
+    public function emailMatches($emails,$visitorEmail) {
+
+
+
+    }
+
+    public function randGuid() {
+        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+        $randomString = '';
+        for ($i = 0; $i < 32; $i++) {
+            $randomString .= $characters[rand(0, strlen($characters) - 1)];
+        }
+        return $randomString;
     }
 
   }

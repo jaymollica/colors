@@ -18,6 +18,7 @@
 
     public function getSchemes() {
 
+      //select3 random color schemes
       $sql = $this->_db->prepare("SELECT * FROM schemes ORDER BY rand() LIMIT 3");
       $sql->execute();
         if($sql->rowCount() > 0) {
@@ -38,6 +39,7 @@
 
     public function getSignUpForm() {
 
+      //after user exhausts choices, show them the sign up form
       $sql = $this->_db->prepare("SELECT * FROM statuses ORDER BY ID ASC");
       $sql->execute();
         if($sql->rowCount() > 0) {
@@ -76,31 +78,41 @@
 
     public function signUp($status,$email) {
 
+      //process signup form
+
+      //validate email
+      if (!preg_match("/([\w\-]+\@[\w\-]+\.[\w\-]+)/",$email)) {
+        print '<p>An invalid email address was entered.</p>'; exit;        
+      }
+
+      //explode status so that m4m splits into m,m
       $parts = explode("4",$status);
 
+      //check to see if the email was already entered, if so update, if not create new entry
       $sql = $this->_db->prepare("SELECT * FROM visitors WHERE email = ?");
       $sql->execute(array($email));
-        if($sql->rowCount() > 0) {
-          $res = $sql->fetch(PDO::FETCH_ASSOC);
-          $uid = $res['id'];
-          $sql = $this->_db->prepare("UPDATE visitors SET session_id = ?, num_entries = num_entries + 1, gender = ?, looking_for = ? WHERE email = ?");
-          $sql->execute(array($_SESSION['visit_id'],$parts[0],$parts[1],$email));
-        }
-        else {
-          while(TRUE) {
-           $guid = $this->randGuid();
+      if($sql->rowCount() > 0) {
+        $res = $sql->fetch(PDO::FETCH_ASSOC);
+        $uid = $res['id'];
+        $sql = $this->_db->prepare("UPDATE visitors SET session_id = ?, num_entries = num_entries + 1, gender = ?, looking_for = ? WHERE email = ?");
+        $sql->execute(array($_SESSION['visit_id'],$parts[0],$parts[1],$email));
+      }
+      else {
+        while(TRUE) {
+         $guid = $this->randGuid();
 
-            $sql = $this->_db->prepare("SELECT * FROM visitors WHERE guid = ?");
-            $sql->execute(array($guid));
-            if($sql->rowCount() == 0) {
-              $sql = $this->_db->prepare("INSERT INTO visitors (session_id,email,num_entries,gender,looking_for,guid) VALUES (?,?,?,?,?,?)");
-              $sql->execute(array($_SESSION['visit_id'],$email,1,$parts[0],$parts[1],$guid));
-              $uid = $this->_db->lastInsertId();
-              break;
-            }
+          $sql = $this->_db->prepare("SELECT * FROM visitors WHERE guid = ?");
+          $sql->execute(array($guid));
+          if($sql->rowCount() == 0) {
+            $sql = $this->_db->prepare("INSERT INTO visitors (session_id,email,num_entries,gender,looking_for,guid) VALUES (?,?,?,?,?,?)");
+            $sql->execute(array($_SESSION['visit_id'],$email,1,$parts[0],$parts[1],$guid));
+            $uid = $this->_db->lastInsertId();
+            break;
           }
         }
+      }
 
+      //log users color preferences, if they have liked a color more than once increase the likes, if it's new to them add it into the db
       foreach($_SESSION['choices'] AS $choice) {
         $sql = $this->_db->prepare("SELECT * FROM scheme_likes WHERE scheme_id = ? AND user_id = ?");
         $sql->execute(array($choice,$uid));
@@ -118,9 +130,15 @@
       $matchedEmails = $this->getMatchesA($uid);
 
       //compose email with potential matches
-      $matches = $this->emailMatches($matchedEmails,$email);
+      $mail = $this->emailMatches($matchedEmails,$email);
 
-      print '<p>Thank you, an email with any potential matches should arrive soon.</p>';
+      if($mail) {
+        print '<p>Thank you, an email with any potential matches should arrive soon.</p>';
+      }
+      else {
+        '<p>A problem has occured, please try again later.</p>';
+      }
+      
 
       exit;
 
@@ -128,6 +146,7 @@
 
     public function getMatchesA($uid) {
 
+      //get a list of schemes the user likes, then return all users who also like those schemes
       $sql = $this->_db->prepare("SELECT scheme_id FROM scheme_likes WHERE user_id = ?");
       $sql->execute(array($uid));
       if($sql->rowCount() > 0) {
@@ -142,7 +161,8 @@
             }
           }
         }
-       
+
+        //count the number of times each user has the same likes, sort by most incommon to least, return the top 5
         if(count($ids) > 0) {
           $counts = array_count_values($ids);
         
@@ -156,7 +176,7 @@
 
             $res = $sql->fetch(PDO::FETCH_ASSOC);
 
-            $matches[] = $res['email'];
+            $matches[] = $res;
 
             $i++;
 
@@ -177,19 +197,45 @@
 
     }
 
-    public function emailMatches($emails,$visitorEmail) {
+    public function emailMatches($matches,$visitorEmail) {
 
+      $to = $visitorEmail;
 
+      $subject = 'Your color matches have arrived!';
+      $from = 'Do-Not-Reply@color.com';
+
+      $headers = "From: " . $from . "\r\n";
+      $headers .= "MIME-Version: 1.0\r\n";
+      $headers .= "Content-Type: text/html; charset=ISO-8859-1\r\n";
+
+      $message = '<html><body>';
+      $message .= '<p>Below is a list of people who best match your color preferences.  The links will take you to a form where you can contact them if you wish.</p>';
+
+      $message .= '<ol>';
+      $i = 0;
+
+      foreach($matches AS $m) {
+
+        $message .= '<li><a href = "' . $m['guid'] . '">' . $m['guid'] . '</a></li>';
+
+      }
+
+      $message .= '</ol>';
+      $message .= '</body></html>';
+
+      print $message;
+
+      return mail($to, $subject, $message, $headers);      
 
     }
 
     public function randGuid() {
-        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-        $randomString = '';
-        for ($i = 0; $i < 32; $i++) {
-            $randomString .= $characters[rand(0, strlen($characters) - 1)];
-        }
-        return $randomString;
+      $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+      $randomString = '';
+      for ($i = 0; $i < 32; $i++) {
+          $randomString .= $characters[rand(0, strlen($characters) - 1)];
+      }
+      return $randomString;
     }
 
   }

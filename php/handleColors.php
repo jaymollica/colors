@@ -28,6 +28,11 @@
     print '<p>Thank you.  You should recieve and email with potential matches shortly.</p>';
 
   }
+  elseif(isset($_REQUEST['m'])) {
+    $m = $_REQUEST['m'];
+    $form = $colors->getMessageForm($m);
+
+  }
   else {
 
     $_SESSION['visit_id'] = $colors->startColor();

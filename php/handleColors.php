@@ -26,11 +26,15 @@
     $result = $colors->signUp($status,$email);
 
     print '<p>Thank you.  You should recieve and email with potential matches shortly.</p>';
+    exit;
 
   }
   elseif(isset($_REQUEST['m'])) {
     $m = $_REQUEST['m'];
     $form = $colors->getMessageForm($m);
+
+    print $form;
+    exit;
 
   }
   else {

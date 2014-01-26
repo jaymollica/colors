@@ -216,7 +216,7 @@
 
       foreach($matches AS $m) {
 
-        $message .= '<li><a href = "' . $m['guid'] . '">' . $m['guid'] . '</a></li>';
+        $message .= '<li><a href = "/php/handleColors.php?m=' . $m['guid'] . '">' . $m['guid'] . '</a></li>';
 
       }
 
@@ -226,6 +226,20 @@
       print $message;
 
       return mail($to, $subject, $message, $headers);      
+
+    }
+
+    public function getMessageForm($m) {
+
+      $form = '';
+      $form .= '<p>Send your match an introduction.  Tell them how you found this site and include some interesting details about yourself.</p>';
+      $form .= '<form id="message">';
+      $form .= '<textarea></textarea>';
+      $form .= '<input type="button" id="submitMessage" value="Send!" />';
+      $form .= '<input type="hidden" name="guid" value="' . $m . '" />';
+      $form .= '</form>';
+
+      return $form;      
 
     }
 

@@ -94,12 +94,15 @@
       if($sql->rowCount() > 0) {
         $res = $sql->fetch(PDO::FETCH_ASSOC);
         $uid = $res['id'];
+        $_SESSION['guid'] = $res['guid'];
         $sql = $this->_db->prepare("UPDATE visitors SET session_id = ?, num_entries = num_entries + 1, gender = ?, looking_for = ? WHERE email = ?");
         $sql->execute(array($_SESSION['visit_id'],$parts[0],$parts[1],$email));
       }
       else {
         while(TRUE) {
-         $guid = $this->randGuid();
+          $guid = $this->randGuid();
+
+          $_SESSION['guid'] = $guid;
 
           $sql = $this->_db->prepare("SELECT * FROM visitors WHERE guid = ?");
           $sql->execute(array($guid));
@@ -139,7 +142,6 @@
         '<p>A problem has occured, please try again later.</p>';
       }
       
-
       exit;
 
     }
@@ -216,7 +218,10 @@
 
       foreach($matches AS $m) {
 
-        $message .= '<li><a href = "/php/handleColors.php?m=' . $m['guid'] . '">' . $m['guid'] . '</a></li>';
+        $docroot = $_SERVER['DOCUMENT_ROOT'];
+        $host = $_SERVER['HTTP_HOST'];
+
+        $message .= '<li><a href = "http://' . $host . '/php/handleColors.php?m=' . $m['guid'] . '">' . $m['guid'] . '</a></li>';
 
       }
 
@@ -234,22 +239,68 @@
       $form = '';
       $form .= '<p>Send your match an introduction.  Tell them how you found this site and include some interesting details about yourself.</p>';
       $form .= '<form id="message">';
-      $form .= '<textarea></textarea>';
-      $form .= '<input type="button" id="submitMessage" value="Send!" />';
-      $form .= '<input type="hidden" name="guid" value="' . $m . '" />';
+      $form .= '<textarea name="message"></textarea>';
+      $form .= '<input type="button" name="submitMessage" id="submitMessage" value="Send!" />';
+      $form .= '<input type="hidden" name="receiverGuid" value="' . $m . '" />';
+      $form .= '<input type="hidden" name="callerGuid" value="' . $_SESSION['guid'] . '" />';
       $form .= '</form>';
 
       return $form;      
 
     }
 
+    public function submitMessage($message,$receiver,$caller) {
+
+      //insert message into db
+
+      $hash = $this->makeHash;
+
+      $sql = $this->_db->prepare("INSERT INTO messages (message,caller_guid,receiver_guid,hash) VALUES (?,?,?,?)");
+      $sql->execute(array($message,$caller,$receiver,$hash));
+
+
+      //send validation email to caller
+      $sql = $this->_db->prepare("SELECT * FROM visitors WHERE guid = ?");
+      $sql->execute(array($caller));
+      if($sql->rowCount() > 0) {
+        $res = $sql->fetch(PDO::FETCH_ASSOC);
+        $callerEmail = $res['email'];
+
+        $host = $_SERVER['HTTP_HOST'];
+
+        $to = $callerEmail;
+        $subject = 'One last step before your message is sent.';
+
+        $from = 'Do-Not-Reply@color.com';
+
+        $headers = "From: " . $from . "\r\n";
+        $headers .= "MIME-Version: 1.0\r\n";
+        $headers .= "Content-Type: text/html; charset=ISO-8859-1\r\n";
+
+        $message = '<html><body>';
+        $message .= '<p>Click the link to send your message.</p>';
+        $message .= '<p><a href="http://' . $host .'/send/?h=' . $hash . '&c=' . $caller . '&r=' . $receiver .'">http://' . $host .'/send/?h=' . $hash . '&c=' . $caller . '&r=' . $receiver .'</a></p>';
+
+        $message .= '</body></html>';
+
+        return mail($to, $subject, $message, $headers);
+        
+      }      
+
+    }
+
+    public function makeHash() {
+      $hash = md5(rand(0,1000));
+      return $hash;
+    }
+
     public function randGuid() {
       $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
-      $randomString = '';
+      $guid = '';
       for ($i = 0; $i < 32; $i++) {
-          $randomString .= $characters[rand(0, strlen($characters) - 1)];
+          $guid .= $characters[rand(0, strlen($characters) - 1)];
       }
-      return $randomString;
+      return $guid;
     }
 
   }

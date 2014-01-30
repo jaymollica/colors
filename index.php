@@ -1,11 +1,3 @@
-<?php
-
-	if(isset($_REQUEST['m'])) {
-		
-	}
-
-?>
-
 <!DOCTYPE html5>
 	<html>
 		<head>

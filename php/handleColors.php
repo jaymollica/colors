@@ -37,6 +37,22 @@
     exit;
 
   }
+  elseif(isset($_REQUEST['submitMessage'])) {
+
+    $message = $_REQUEST['message'];
+    $receiver = $_REQUEST['receiverGuid'];
+    $caller = $_REQUEST['callerGuid'];
+
+    $response = $colors->submitMessage($message,$receiver,$caller);
+
+    if($response) {
+      print '<p>Check your email to finalize your message.</p>';
+    }
+    else {
+      print '<p>An error occurred, please try again later.</p>';
+    }
+
+  }
   else {
 
     $_SESSION['visit_id'] = $colors->startColor();

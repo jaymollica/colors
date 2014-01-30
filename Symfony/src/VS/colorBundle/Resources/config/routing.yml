@@ -1,3 +1,0 @@
-v_scolor_homepage:
-    pattern:  /hello/{name}
-    defaults: { _controller: VScolorBundle:Default:index }

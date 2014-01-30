@@ -1,4 +1,0 @@
-v_scolor:
-    resource: "@VScolorBundle/Resources/config/routing.yml"
-    prefix:   /
-

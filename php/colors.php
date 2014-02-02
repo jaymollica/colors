@@ -284,11 +284,83 @@
         $message .= '</body></html>';
 
         return mail($to, $subject, $message, $headers);
-        
+
       }      
 
     }
 
+    public function validateMessage($hash,$receiver,$caller) {
+
+      $sql = $this->_db->prepare("SELECT * FROM messages WHERE hash=? AND receiver=? AND caller=?");
+      $sql->execute(array($hash,$receiver,$caller));
+      if($sql->rowCount() > 0) {  //a message was found
+        $res = $sql->fetch(PDO::FETCH_ASSOC);
+        $message = $res['message'];
+        $mid = $res['id'];
+        if($res['sent'] == 1) { //the message was already sent
+          print '<p>You have already sent this message, please wait for a response from them.</p>';
+          exit;
+        }
+        else { //the message has not been sent yet
+          //retrieve sender and receiver emails via their guids
+          $sql = $this->_db->prepare("SELECT * FROM visitors WHERE guid=? OR guid=?");
+          $sql->execute(array($receiver,$caller));
+          if($sql->rowCount() == 2) {  //a message was found
+            $visitors = $sql->fetchAll(PDO::FETCH_ASSOC);
+            foreach($visitors AS $v) {
+              if($v['guid'] == $receiver) {
+                $email_r = $v['email'];
+              }
+              elseif($v['guid'] == $caller) {
+                $email_c = $v['email'];
+              }
+
+              if(isset($email_c) && isset($email_r)) {
+                //if both emails are set send the message
+                $to = $email_r;
+
+                $subject = 'Someone has sent you a message!';
+                $from = 'Do-Not-Reply@color.com';
+
+                $headers = "From: " . $from . "\r\n";
+                $headers .= "MIME-Version: 1.0\r\n";
+                $headers .= "Content-Type: text/html; charset=ISO-8859-1\r\n";
+                $body = '<html><body>';
+
+                $body .= '<p>' . $message . '</p>';
+
+                $body .= '<p>Our work here is done!  If you&rsquo;r interested in replying to this message you can reach this person at: <a href="mailto:' . $email_c . '">' . $email_c . '</a>';
+
+                $body .= '</body></html>';
+
+                $mail = mail($to, $subject, $message, $headers);
+
+                if($mail) {
+                  //if the email was successfully sent update the message status to sent so that it cannot be sent multiple times
+                  $sql = $this->_db->prepare("UPDATE messages SET sent=1 WHERE id = ?");
+                  $sql->execute(array($mid));
+                }
+
+                return $mail;
+
+              }
+
+            }
+            else { //the query should always return exactly 2 records
+              print '<p>An error has occurred.</p>';
+              exit;
+            }
+
+
+        }
+
+      }
+      else {
+        print '<p>Your message was not found, please try again later.</p>';
+        exit;
+      }
+
+    }
     public function makeHash() {
       $hash = md5(rand(0,1000));
       return $hash;

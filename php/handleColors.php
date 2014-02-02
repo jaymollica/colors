@@ -53,6 +53,15 @@
     }
 
   }
+  elseif(isset($_REQUEST['h'])) {
+    //someone has clicked a link in their email to finalize a message
+    $hash = $_REQUEST['h'];
+    $caller = $_REQUEST['c'];
+    $receiver = $_REQUEST['r'];
+
+    $response = $colors->validateMessage($hash,$receiver,$caller);
+
+  }
   else {
 
     $_SESSION['visit_id'] = $colors->startColor();

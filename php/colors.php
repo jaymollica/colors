@@ -221,14 +221,14 @@
         $docroot = $_SERVER['DOCUMENT_ROOT'];
         $host = $_SERVER['HTTP_HOST'];
 
-        $message .= '<li><a href = "http://' . $host . '/php/handleColors.php?m=' . $m['guid'] . '">' . $m['guid'] . '</a></li>';
+        $message .= '<li><a href = "http://' . $host . '/color/php/handleColors.php?m=' . $m['guid'] . '">' . $m['guid'] . '</a></li>';
 
       }
 
       $message .= '</ol>';
       $message .= '</body></html>';
 
-      print $message;
+      //print $message;
 
       return mail($to, $subject, $message, $headers);      
 
@@ -344,13 +344,14 @@
                 return $mail;
 
               }
+              else { //the query should always return exactly 2 records
+                print '<p>An error has occurred.</p>';
+                exit;
+              }
 
             }
-            else { //the query should always return exactly 2 records
-              print '<p>An error has occurred.</p>';
-              exit;
-            }
-
+            
+          }
 
         }
 

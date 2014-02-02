@@ -1,6 +1,6 @@
 <?php
 
-  require_once($_SERVER['DOCUMENT_ROOT'] . '/php/header.php');
+  require_once('header.php');
 
   $colors = new colors($pdo);
 

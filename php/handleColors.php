@@ -33,7 +33,58 @@
     $m = $_REQUEST['m'];
     $form = $colors->getMessageForm($m);
 
-    print $form;
+    $html = '<html>';
+    $html .= '<head>';
+    $html .= '<link rel="stylesheet" type="text/css" href="../css/colors.css" />
+              <script src="../js/jquery-1.9.1.min.js"></script>';
+
+    $html .= <<<EOF
+
+    <script>
+
+      $(document).ready(function(){
+
+        $(document).on('click', '#submitMessage', function(){
+
+          var url = 'handleColors.php';
+          var o = {'submitMessage': true};
+
+          var a = $('#message').serializeArray();
+
+          $.each(a, function() {
+            if (o[this.name] !== undefined) {
+              if (!o[this.name].push) {
+                o[this.name] = [o[this.name]];
+              }
+              o[this.name].push(this.value || '');
+            } else {
+              o[this.name] = this.value || '';
+            }
+          });
+
+          var requestData = o;
+
+          $.post(url,requestData, function(data) {
+            $("body").empty().append(data);
+          });
+
+        });
+
+      });
+
+    </script>
+
+EOF;
+
+    $html .= '</head>';
+    $html .= '<body>';
+
+    $html .= $form;
+
+    $html .= '</body></html>';
+
+    print $html;
+
     exit;
 
   }
@@ -60,6 +111,10 @@
     $receiver = $_REQUEST['r'];
 
     $response = $colors->validateMessage($hash,$receiver,$caller);
+
+    if($response) {
+      print '<pre>response: '; print_r($response); print '</pre>';
+    }
 
   }
   else {

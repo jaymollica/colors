@@ -336,7 +336,7 @@
 
               $body .= '</body></html>';
 
-              $mail = mail($to, $subject, $message, $headers);
+              $mail = mail($to, $subject, $body, $headers);
 
               print '<pre>r: '; print_r($mail); print '</pre>';
 

@@ -63,7 +63,7 @@
 		<body>
 			<div id="container">
 
-				<p>Choose your favorite color scheme...</p>
+				<p id="instructions">Choose your favorite color scheme...</p>
 
 				<div id="schemes"></div>
 

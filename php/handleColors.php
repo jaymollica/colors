@@ -30,8 +30,11 @@
 
   }
   elseif(isset($_REQUEST['m'])) {
-    $m = $_REQUEST['m'];
-    $form = $colors->getMessageForm($m);
+    $m = $_REQUEST['m']; //receiver guid
+    $c = $_REQUEST['c']; //caller guid
+    $h = $_REQUEST['h']; //hash
+
+    $form = $colors->getMessageForm($m,$c,$h);
 
     $html = '<html>';
     $html .= '<head>';
@@ -93,15 +96,13 @@ EOF;
     $message = $_REQUEST['message'];
     $receiver = $_REQUEST['receiverGuid'];
     $caller = $_REQUEST['callerGuid'];
+    $hash = $_REQUEST['h'];
 
-    $response = $colors->submitMessage($message,$receiver,$caller);
+    $response = $colors->submitMessage($message,$receiver,$caller,$hash);
 
-    if($response) {
-      print '<p>Check your email to finalize your message.</p>';
-    }
-    else {
-      print '<p>An error occurred, please try again later.</p>';
-    }
+    print $response;
+
+    exit;
 
   }
   elseif(isset($_REQUEST['h'])) {
@@ -122,7 +123,7 @@ EOF;
     $_SESSION['visit_id'] = $colors->startColor();
 
   }
-
+  
   $schemes = $colors->getSchemes();
 
   $scheme = array();
@@ -133,5 +134,7 @@ EOF;
   foreach ($scheme AS $s) {
     print $s;
   }
+
+  
 
 ?>

@@ -81,6 +81,8 @@
       //process signup form
 
       //validate email
+
+      $email = $this->sanitizeMe($email,'email');
       if (!preg_match("/([\w\-]+\@[\w\-]+\.[\w\-]+)/",$email)) {
         print '<p>An invalid email address was entered.</p>'; exit;        
       }
@@ -132,15 +134,22 @@
       //return an array of matched email addresses
       $matchedEmails = $this->getMatchesA($uid);
 
-      //compose email with potential matches
-      $mail = $this->emailMatches($matchedEmails,$email);
+      if(!empty($matchedEmails)) {
+        $mail = $this->emailMatches($matchedEmails,$email);
 
-      if($mail) {
-        print '<p>Thank you, an email with any potential matches should arrive soon.</p>';
+        if($mail) {
+          print '<p>Thank you, an email with any potential matches should arrive soon.</p>';
+        }
+        else {
+           print '<p>A problem has occured, please try again later.</p>';
+        }
       }
       else {
-        '<p>A problem has occured, please try again later.</p>';
+        print '<p>We didn&rsquo;t find any matches for you!  Please try again later.</p>';
       }
+
+      //compose email with potential matches
+      
       
       exit;
 
@@ -188,6 +197,14 @@
 
           }
 
+          //add caller, receiver and hash to table to let messaging happen
+          $availableHash = $this->makeAvailable($matches);
+
+          foreach($matches AS &$m) {
+            $m['availableHash'] = $availableHash;
+            $m['caller_guid'] = $_SESSION['guid'];
+          }
+
           return $matches;
 
         }
@@ -196,6 +213,19 @@
         }
         
       }
+
+    }
+
+    public function makeAvailable($matches) {
+      $caller_guid = $_SESSION['guid'];
+      $hash = $this->makeHash();
+
+      foreach($matches AS $m) {
+        $sql = $this->_db->prepare("INSERT INTO available_messages (caller_guid,receiver_guid,hash) VALUES (?,?,?)");
+        $sql->execute(array($caller_guid,$m['guid'],$hash));
+      }
+
+      return $hash;
 
     }
 
@@ -221,7 +251,7 @@
         $docroot = $_SERVER['DOCUMENT_ROOT'];
         $host = $_SERVER['HTTP_HOST'];
 
-        $message .= '<li><a href = "http://' . $host . '/php/handleColors.php?m=' . $m['guid'] . '">' . $m['guid'] . '</a></li>';
+        $message .= '<li><a href = "http://' . $host . '/php/handleColors.php?m=' . $m['guid'] . '&c=' . $m['caller_guid'] . '&h=' . $m['availableHash'] . '">' . $m['guid'] . '</a></li>';
 
       }
 
@@ -234,7 +264,7 @@
 
     }
 
-    public function getMessageForm($m) {
+    public function getMessageForm($m,$c,$h) {
 
       $form = '';
       $form .= '<p>Send your match an introduction.  Tell them how you found this site and include some interesting details about yourself.</p>';
@@ -242,67 +272,33 @@
       $form .= '<textarea name="message"></textarea>';
       $form .= '<input type="button" name="submitMessage" id="submitMessage" value="Send!" />';
       $form .= '<input type="hidden" name="receiverGuid" value="' . $m . '" />';
-      $form .= '<input type="hidden" name="callerGuid" value="' . $_SESSION['guid'] . '" />';
+      $form .= '<input type="hidden" name="callerGuid" value="' . $c . '" />';
+      $form .= '<input type="hidden" name="h" value="' . $h . '" />';
       $form .= '</form>';
 
       return $form;      
 
     }
 
-    public function submitMessage($message,$receiver,$caller) {
+    public function submitMessage($message,$receiver,$caller,$hash) {
 
-      //insert message into db
-
-      $hash = $this->makeHash();
-
-      $sql = $this->_db->prepare("INSERT INTO messages (message,caller_guid,receiver_guid,hash) VALUES (?,?,?,?)");
-      $sql->execute(array($message,$caller,$receiver,$hash));
-
-      //send validation email to caller
-      $sql = $this->_db->prepare("SELECT * FROM visitors WHERE guid = ?");
-      $sql->execute(array($caller));
+      //validate message to see if the hash is valid and that it hasn't been used to contact this person before
+      $sql = $this->_db->prepare("SELECT * FROM available_messages WHERE caller_guid = ? AND receiver_guid = ? AND hash = ?");
+      $sql->execute(array($caller,$receiver,$hash));
       if($sql->rowCount() > 0) {
+        //now check if the receiver is still reachable by that caller through that hash
         $res = $sql->fetch(PDO::FETCH_ASSOC);
-        $callerEmail = $res['email'];
+        $status = $res['status'];
+        if($status == 0) {
 
-        $host = $_SERVER['HTTP_HOST'];
+          //insert message into db
 
-        $to = $callerEmail;
-        $subject = 'One last step before your message is sent.';
+          $message = $this->sanitizeMe($message,'string');
 
-        $from = 'Do-Not-Reply@color.com';
+          $sql = $this->_db->prepare("INSERT INTO messages (message,caller_guid,receiver_guid,hash) VALUES (?,?,?,?)");
+          $sql->execute(array($message,$caller,$receiver,$hash));
 
-        $headers = "From: " . $from . "\r\n";
-        $headers .= "MIME-Version: 1.0\r\n";
-        $headers .= "Content-Type: text/html; charset=ISO-8859-1\r\n";
-
-        $message = '<html><body>';
-        $message .= '<p>Click the link to send your message.</p>';
-        $message .= '<p><a href="http://' . $host .'/php/handleColors.php/?h=' . $hash . '&c=' . $caller . '&r=' . $receiver .'">http://' . $host .'/send/?h=' . $hash . '&c=' . $caller . '&r=' . $receiver .'</a></p>';
-
-        $message .= '</body></html>';
-
-        return mail($to, $subject, $message, $headers);
-
-      }      
-
-    }
-
-    public function validateMessage($hash,$receiver,$caller) {
-
-      $sql = $this->_db->prepare("SELECT * FROM messages WHERE hash=? AND receiver_guid=? AND caller_guid=?");
-      $sql->execute(array($hash,$receiver,$caller));
-      if($sql->rowCount() > 0) {  //a message was found
-        $res = $sql->fetch(PDO::FETCH_ASSOC);
-        $message = $res['message'];
-        $mid = $res['id'];
-        if($res['sent'] == 1) { //the message was already sent
-          print '<p>You have already sent this message, please wait for a response from them.</p>';
-          exit;
-        }
-        else { //the message has not been sent yet
-          //retrieve sender and receiver emails via their guids
-
+          //now send email to receiver
           $sql = $this->_db->prepare("SELECT * FROM visitors WHERE guid=? OR guid=?");
           $sql->execute(array($receiver,$caller));
           if($sql->rowCount() == 2) {  //a message was found
@@ -332,7 +328,7 @@
 
               $body .= '<p>' . $message . '</p>';
 
-              $body .= '<p>Our work here is done!  If you&rsquo;r interested in replying to this message you can reach this person at: <a href="mailto:' . $email_c . '">' . $email_c . '</a>';
+              $body .= '<p>Our work here is done!  If you&rsquo;re interested in replying to this message you can reach this person at: <a href="mailto:' . $email_c . '">' . $email_c . '</a>';
 
               $body .= '</body></html>';
 
@@ -344,31 +340,51 @@
                 //if the email was successfully sent update the message status to sent so that it cannot be sent multiple times
                 $sql = $this->_db->prepare("UPDATE messages SET sent=1 WHERE id = ?");
                 $sql->execute(array($mid));
+
+                $sql = $this->_db->prepare("UPDATE available_messages SET status=1 WHERE caller_guid = ? AND receiver_guid = ? AND hash = ?");
+                $sql->execute(array($caller,$receiver,$hash));
+
+                return '<p>You&rsquo;re message was sent!</p>';
+
               }
               else {
-                print '<p>Something went wrong and your email was not delivered.</p>';
+                return '<p>Something went wrong and your email was not delivered.</p>';
               }
 
-              return $mail;
+            }
+            else {
+              return '<p>The person you want to contact is currently unavailable.</p>';
+            }
 
-            }
-            else { //the query should always return exactly 2 records
-              print '<p>An error has occurred.</p>';
-              $res = $sql->fetchAll(PDO::FETCH_ASSOC);
-              print '<pre>res: '; print_r($res); print '</pre>';
-              exit;
-            }
-            
           }
-
+          else {
+            return '<p>Your message could not be located.</p>';
+          }  
         }
-
+        else {
+          return '<p>You have already contacted this person, please wait for a response directly from them.</p>';
+        }
       }
       else {
-        print '<p>Your message was not found, please try again later.</p>';
-        exit;
+        return '<p>This person is currently unreachable.</p>';
       }
+    }
 
+    public function sanitizeMe($var,$type) {
+      if($type == 'string') {
+        $var = filter_var($var, FILTER_SANITIZE_STRING);
+        return $var;
+      }
+      elseif($type == 'email') {
+        $var = filter_var($var, FILTER_SANITIZE_EMAIL);
+        if(filter_var($var, FILTER_VALIDATE_EMAIL)) {
+          return $var;
+        }
+        else {
+          print '<p>You did not enter a valid email address.</p>';
+          exit;
+        }
+      }      
     }
 
     public function makeHash() {

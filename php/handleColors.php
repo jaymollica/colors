@@ -1,10 +1,13 @@
 <?php
 
-  require_once('header.php');
-
+  print 'colors' . class_exists('colors');
   $colors = new colors($pdo);
 
+  print '<pre>'; print_r($_REQUEST); print '</pre>';
+
   if(isset($_REQUEST['id'])) {
+
+    print '<p>ID HERE</p>';
 
     $_SESSION['choices'][] = $_REQUEST['id'];
 
@@ -105,36 +108,16 @@ EOF;
     exit;
 
   }
-  elseif(isset($_REQUEST['h'])) {
-    //someone has clicked a link in their email to finalize a message
-    $hash = $_REQUEST['h'];
-    $caller = $_REQUEST['c'];
-    $receiver = $_REQUEST['r'];
-
-    $response = $colors->validateMessage($hash,$receiver,$caller);
-
-    if($response) {
-      print '<pre>response: '; print_r($response); print '</pre>';
-    }
-
-  }
   else {
 
     $_SESSION['visit_id'] = $colors->startColor();
 
-  }
-  
-  $schemes = $colors->getSchemes();
+    $schemes = $colors->getSchemes();
 
-  $scheme = array();
-  foreach ($schemes AS $s) {
-    $scheme[] = '<div class="scheme" id="' . $s['id'] . '"><div class="color" style="background-color:#' . $s['color_1'] . '"></div><div class="color" style="background-color:#' . $s['color_2'] . '"></div><div class="color" style="background-color:#' . $s['color_3'] . '"></div></div>';
-  }
+    $instructions = '<p id="instructions">Choose your favorite color scheme...</p>';
 
-  foreach ($scheme AS $s) {
-    print $s;
-  }
+    echo $twig->render('choices.html', array('instructions' => $instructions, 'schemes' => $schemes));
 
-  
+  }
 
 ?>

@@ -66,7 +66,7 @@
 
       $form .= '<p>Email me with potential matches.</p>';
 
-      $form .= '<div class="emailBox"><input type="email" name="email" /></div>';
+      $form .= '<div class="emailBox"><input type="email" name="email" id="email" /></div>';
 
       $form .= '<div class="submitBox"><input type="button" id="submit" value="Submit" /></div>';
 

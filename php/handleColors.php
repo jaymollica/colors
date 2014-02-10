@@ -42,9 +42,7 @@
     $c = $_REQUEST['c']; //caller guid
     $h = $_REQUEST['h']; //hash
 
-    $form = $colors->getMessageForm($m,$c,$h);
-
-    $html .= $form;
+    $ret = $colors->getMessageForm($m,$c,$h);
 
     echo $twig->render('messageForm.html', array('instructions' => $ret['instructions'], 'm' => $m, 'c' => $c, 'h' => $h));
 
@@ -58,10 +56,9 @@
     $caller = $_REQUEST['callerGuid'];
     $hash = $_REQUEST['h'];
 
-    $response = $colors->submitMessage($message,$receiver,$caller,$hash);
+    $result = $colors->submitMessage($message,$receiver,$caller,$hash);
 
-    print $response;
-
+    echo $twig->render('handleSignUp.html', array('result' => $result));
     exit;
 
   }

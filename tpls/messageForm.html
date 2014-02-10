@@ -1,11 +1,13 @@
+{% include "base_header.html" %}
 <form id="message">
   <div>{{instructions}}</div>
 
   <textarea name="message"></textarea>
   <input type="button" name="submitMessage" id="submitMessage" value="Send!" />
   <input type="hidden" name="receiverGuid" value="{{m}}" />
-  <input type="hidden" name="receiverGuid" value="{{c}}" />
-  <input type="hidden" name="receiverGuid" value="{{h}}" />
-
+  <input type="hidden" name="callerGuid" value="{{c}}" />
+  <input type="hidden" name="h" value="{{h}}" />
 
 </form>
+{% include "base_footer.html" %}
+

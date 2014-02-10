@@ -1,13 +1,15 @@
-<form id="signUp">
-  <div>I am a...</div>
-  {% for item in status %}
-    <div class="statusRow"><label><input type="radio" name="status" value="{{item.short_desc}}" />{{item.description}}</label></div>
-  {% endfor %}
+<form id="signUp" role="form">
+  <div class="form-group">
+    <div>I am a...</div>
+    {% for item in status %}
+      <div class="statusRow radio"><label><input type="radio" name="status" value="{{item.short_desc}}" />{{item.description}}</label></div>
+    {% endfor %}
 
-  <p>Email me with potential matches.</p>
+    <div class="emailLabel">Email me with potential matches!</div>
 
-  <div class="emailBox"><input type="email" name="email" id="email" /></div>
+    <div class="emailBox"><input type="email" name="email" id="email" class="input-lg form-control" placeholder="Enter email"/></div>
 
-  <div class="submitBox"><input type="button" id="submit" value="Submit" /></div>
+    <div class="submitBox"><input type="button" id="submit" value="Submit" class="btn btn-primary btn-lg btn-block" /></div>
+  </div>
 
 </form>

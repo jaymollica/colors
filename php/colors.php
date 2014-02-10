@@ -311,8 +311,6 @@
 
               $mail = mail($to, $subject, $body, $headers);
 
-              print '<pre>r: '; print_r($mail); print '</pre>';
-
               if($mail) {
                 //if the email was successfully sent update the message status to sent so that it cannot be sent multiple times
                 $sql = $this->_db->prepare("UPDATE messages SET sent=1 WHERE id = ?");
@@ -321,7 +319,7 @@
                 $sql = $this->_db->prepare("UPDATE available_messages SET status=1 WHERE caller_guid = ? AND receiver_guid = ? AND hash = ?");
                 $sql->execute(array($caller,$receiver,$hash));
 
-                return '<p>You&rsquo;re message was sent!</p>';
+                return '<p>Youre message was sent!</p>';
 
               }
               else {

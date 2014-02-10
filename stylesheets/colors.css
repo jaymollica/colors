@@ -1,14 +1,33 @@
 /* line 1, ../sass/colors.scss */
+body, p, a, div, span {
+  font-size: 1.2em;
+  font-family: Georgia, serif;
+  color: #443D33;
+}
+
+/* line 7, ../sass/colors.scss */
+#container {
+  padding-top: 5%;
+  width: 660px;
+  margin-right: auto;
+  margin-left: auto;
+}
+
+/* line 14, ../sass/colors.scss */
 .scheme {
   width: 660px;
   height: 220px;
   margin-bottom: 40px;
-  border: 2px solid black;
 }
 
-/* line 8, ../sass/colors.scss */
+/* line 20, ../sass/colors.scss */
 .color {
   width: 220px;
   height: 220px;
   float: left;
+}
+
+/* line 26, ../sass/colors.scss */
+.emailBox, .submitBox, .emailLabel, .messageArea {
+  padding-top: 2%;
 }

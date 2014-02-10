@@ -1,12 +1,28 @@
+body,p,a,div,span {
+  font-size:1.2em;
+  font-family: Georgia, serif;
+  color:#443D33;
+}
+
+#container {
+  padding-top:5%;
+  width:660px;
+  margin-right:auto;
+  margin-left:auto;
+}
+
 .scheme {
   width:660px;
   height:220px;
   margin-bottom:40px;
-  border:2px solid black;
 }
 
 .color {
   width:220px;
   height:220px;
   float:left;
+}
+
+.emailBox, .submitBox, .emailLabel, .messageArea {
+  padding-top:2%;
 }

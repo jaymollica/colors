@@ -1,12 +1,18 @@
 {% include "base_header.html" %}
-<form id="message">
-  <div>{{instructions}}</div>
+<form id="message" role="form">
+  <div class="form-group">
 
-  <textarea name="message"></textarea>
-  <input type="button" name="submitMessage" id="submitMessage" value="Send!" />
+  <div class="instructions">{{instructions}}</div>
+
+  <div class="messageArea">
+    <textarea name="message" class="form-control" rows="5"></textarea>
+  </div>
+  <div class="submitBox"><input type="button" name="submitMessage" id="submitMessage" value="Send!" class="btn btn-primary btn-lg btn-block" /></div>
   <input type="hidden" name="receiverGuid" value="{{m}}" />
   <input type="hidden" name="callerGuid" value="{{c}}" />
   <input type="hidden" name="h" value="{{h}}" />
+
+  </div>
 
 </form>
 {% include "base_footer.html" %}

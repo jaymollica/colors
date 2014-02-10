@@ -11,7 +11,7 @@ $(document).ready(function(){
     var requestData = {'id':schemeId};
 
     $.post(url,requestData, function(data) {
-      $("#schemes").empty().append(data);
+      $("#container").empty().append(data);
     });
 
   });
@@ -38,7 +38,7 @@ $(document).ready(function(){
     var requestData = o;
 
     $.post(url,requestData, function(data) {
-      $("#schemes").empty().append(data);
+      $("#container").empty().append(data);
     });
   });
 
@@ -63,7 +63,7 @@ $(document).ready(function(){
     var requestData = o;
 
     $.post(url,requestData, function(data) {
-      $("body").empty().append(data);
+      $("#container").empty().append(data);
     });
 
   });

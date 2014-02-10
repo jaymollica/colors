@@ -10,15 +10,18 @@
     $_SESSION['choices'][] = $_REQUEST['id'];
 
     if(count($_SESSION['choices']) == 5 ) {
-      $status = $colors->getSignUpForm();
+      $ret = $colors->getSignUpForm();
+
+      $status = $ret['statuses'];
+      $metros = $ret['metros'];
       
-      echo $twig->render('signup.html', array('status' => $status));
+      echo $twig->render('signup.html', array('status' => $status, 'metros' => $metros));
       exit;
     }
 
     $schemes = $colors->getSchemes();
 
-    $instructions = '<p id="instructions">Choose your favorite color scheme...</p>';
+    $instructions = '<p id="instructions">Choose your favorite set...</p>';
 
     echo $twig->render('choices.html', array('instructions' => $instructions, 'schemes' => $schemes));
 
@@ -30,8 +33,11 @@
     if(isset($_REQUEST['email'])) {
       $email = $_REQUEST['email'];
     }
+    if(isset($_REQUEST['metro'])) {
+      $metro = $_REQUEST['metro'];
+    }
 
-    $result = $colors->signUp($status,$email);
+    $result = $colors->signUp($status,$email,$metro);
 
     echo $twig->render('handleSignUp.html', array('result' => $result));
     exit;
@@ -68,7 +74,7 @@
 
     $schemes = $colors->getSchemes();
 
-    $instructions = '<p id="instructions">Choose your favorite color scheme...</p>';
+    $instructions = '<p id="instructions">Choose your favorite set...</p>';
 
     echo $twig->render('base_header.html',array());
     echo $twig->render('choices.html', array('instructions' => $instructions, 'schemes' => $schemes));

@@ -40,28 +40,51 @@
     public function getSignUpForm() {
 
       //after user exhausts choices, show them the sign up form
+      $ret = array();
+
+      //get the possible statuses (m4w...)
       $sql = $this->_db->prepare("SELECT * FROM statuses ORDER BY ID ASC");
       $sql->execute();
-        if($sql->rowCount() > 0) {
-          $statuses = $sql->fetchAll(PDO::FETCH_ASSOC);
+      if($sql->rowCount() > 0) {
+        $statuses = $sql->fetchAll(PDO::FETCH_ASSOC);
 
-          $i = 0;
+        $i = 0;
 
-          foreach($statuses AS $s) {
+        foreach($statuses AS $s) {
 
-            $status[$i] = $s;
+          $status[$i] = $s;
 
-            $i++;
+          $i++;
 
-          } 
-        }
+        } 
+      }
 
-      return $status;
+      $ret['statuses'] = $status;
+
+      //get the metro areas
+      $sql = $this->_db->prepare("SELECT * FROM metro_areas ORDER BY metro_area ASC");
+      $sql->execute();
+      if($sql->rowCount() > 0) {
+        $metros = $sql->fetchAll(PDO::FETCH_ASSOC);
+
+        $i = 0;
+
+        foreach($metros AS $m) {
+
+          $metro[$i] = $m;
+
+          $i++;
+
+        } 
+      }
+
+      $ret['metros'] = $metro;
+
+      return $ret;
 
     }
 
-    public function signUp($status,$email) {
-
+    public function signUp($status,$email,$metro) {
       //process signup form
 
       //validate email
@@ -81,8 +104,8 @@
         $res = $sql->fetch(PDO::FETCH_ASSOC);
         $uid = $res['id'];
         $_SESSION['guid'] = $res['guid'];
-        $sql = $this->_db->prepare("UPDATE visitors SET session_id = ?, num_entries = num_entries + 1, gender = ?, looking_for = ? WHERE email = ?");
-        $sql->execute(array($_SESSION['visit_id'],$parts[0],$parts[1],$email));
+        $sql = $this->_db->prepare("UPDATE visitors SET session_id = ?, num_entries = num_entries + 1, gender = ?, looking_for = ?, metro_id = ? WHERE email = ?");
+        $sql->execute(array($_SESSION['visit_id'],$parts[0],$parts[1],$metro,$email));
       }
       else {
         while(TRUE) {
@@ -93,8 +116,8 @@
           $sql = $this->_db->prepare("SELECT * FROM visitors WHERE guid = ?");
           $sql->execute(array($guid));
           if($sql->rowCount() == 0) {
-            $sql = $this->_db->prepare("INSERT INTO visitors (session_id,email,num_entries,gender,looking_for,guid) VALUES (?,?,?,?,?,?)");
-            $sql->execute(array($_SESSION['visit_id'],$email,1,$parts[0],$parts[1],$guid));
+            $sql = $this->_db->prepare("INSERT INTO visitors (session_id,email,num_entries,gender,looking_for,guid,metro_id) VALUES (?,?,?,?,?,?,?)");
+            $sql->execute(array($_SESSION['visit_id'],$email,1,$parts[0],$parts[1],$guid,$metro));
             $uid = $this->_db->lastInsertId();
             break;
           }
@@ -319,7 +342,7 @@
                 $sql = $this->_db->prepare("UPDATE available_messages SET status=1 WHERE caller_guid = ? AND receiver_guid = ? AND hash = ?");
                 $sql->execute(array($caller,$receiver,$hash));
 
-                return '<p>Youre message was sent!</p>';
+                return '<p>Youre message was sent!  Our work here is done, now it&rsquo;s up to the person you contacted to get back to you.</p>';
 
               }
               else {

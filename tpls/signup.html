@@ -5,6 +5,15 @@
       <div class="statusRow radio"><label><input type="radio" name="status" value="{{item.short_desc}}" />{{item.description}}</label></div>
     {% endfor %}
 
+    <div class="metroLabel">I live in or near...</div>
+    <div class="metroBox">
+      <select class="form-control" name="metro">
+        <option>Select Metro Area</option>
+        {% for item in metros %}
+          <option value="{{item.id}}">{{item.metro_area}}</option>
+        {% endfor %}
+      </select>
+
     <div class="emailLabel">Email me with potential matches!</div>
 
     <div class="emailBox"><input type="email" name="email" id="email" class="input-lg form-control" placeholder="Enter email"/></div>

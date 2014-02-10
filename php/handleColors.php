@@ -1,21 +1,26 @@
 <?php
 
-  print 'colors' . class_exists('colors');
+  include($_SERVER['DOCUMENT_ROOT'] . '/php/header.php');
+  include($_SERVER['DOCUMENT_ROOT'] . '/php/colors.php');
+
   $colors = new colors($pdo);
 
-  print '<pre>'; print_r($_REQUEST); print '</pre>';
-
   if(isset($_REQUEST['id'])) {
-
-    print '<p>ID HERE</p>';
 
     $_SESSION['choices'][] = $_REQUEST['id'];
 
     if(count($_SESSION['choices']) == 5 ) {
-      $form = $colors->getSignUpForm();
-      print $form;
+      $status = $colors->getSignUpForm();
+      
+      echo $twig->render('signup.html', array('status' => $status));
       exit;
     }
+
+    $schemes = $colors->getSchemes();
+
+    $instructions = '<p id="instructions">Choose your favorite color scheme...</p>';
+
+    echo $twig->render('choices.html', array('instructions' => $instructions, 'schemes' => $schemes));
 
   }
   elseif(isset($_REQUEST['signUp'])) {
@@ -28,7 +33,7 @@
 
     $result = $colors->signUp($status,$email);
 
-    print '<p>Thank you.  You should recieve and email with potential matches shortly.</p>';
+    echo $twig->render('handleSignUp.html', array('result' => $result));
     exit;
 
   }
@@ -39,57 +44,9 @@
 
     $form = $colors->getMessageForm($m,$c,$h);
 
-    $html = '<html>';
-    $html .= '<head>';
-    $html .= '<link rel="stylesheet" type="text/css" href="../css/colors.css" />
-              <script src="../js/jquery-1.9.1.min.js"></script>';
-
-    $html .= <<<EOF
-
-    <script>
-
-      $(document).ready(function(){
-
-        $(document).on('click', '#submitMessage', function(){
-
-          var url = 'handleColors.php';
-          var o = {'submitMessage': true};
-
-          var a = $('#message').serializeArray();
-
-          $.each(a, function() {
-            if (o[this.name] !== undefined) {
-              if (!o[this.name].push) {
-                o[this.name] = [o[this.name]];
-              }
-              o[this.name].push(this.value || '');
-            } else {
-              o[this.name] = this.value || '';
-            }
-          });
-
-          var requestData = o;
-
-          $.post(url,requestData, function(data) {
-            $("body").empty().append(data);
-          });
-
-        });
-
-      });
-
-    </script>
-
-EOF;
-
-    $html .= '</head>';
-    $html .= '<body>';
-
     $html .= $form;
 
-    $html .= '</body></html>';
-
-    print $html;
+    echo $twig->render('messageForm.html', array('instructions' => $ret['instructions'], 'm' => $m, 'c' => $c, 'h' => $h));
 
     exit;
 
@@ -116,7 +73,10 @@ EOF;
 
     $instructions = '<p id="instructions">Choose your favorite color scheme...</p>';
 
+    echo $twig->render('base_header.html',array());
     echo $twig->render('choices.html', array('instructions' => $instructions, 'schemes' => $schemes));
+    echo $twig->render('base_footer.html',array());
+
 
   }
 

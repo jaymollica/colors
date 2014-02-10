@@ -56,23 +56,7 @@
           } 
         }
 
-      $form = '';
-      $form .= '<p>I am a...</p>';
-      $form .= '<form id="signUp">';
-
-      foreach($status AS $s) {
-        $form .= '<div class="statusRow"><label><input type="radio" name="status" value="' . $s['short_desc'] . '" />' . $s['description'] . '</label></div>';
-      }
-
-      $form .= '<p>Email me with potential matches.</p>';
-
-      $form .= '<div class="emailBox"><input type="email" name="email" id="email" /></div>';
-
-      $form .= '<div class="submitBox"><input type="button" id="submit" value="Submit" /></div>';
-
-      $form .= '</form>';
-
-      return $form;
+      return $status;
 
     }
 
@@ -138,19 +122,16 @@
         $mail = $this->emailMatches($matchedEmails,$email);
 
         if($mail) {
-          print '<p>Thank you, an email with any potential matches should arrive soon.</p>';
+          return '<p>Thank you, an email with any potential matches should arrive soon.</p>';
         }
         else {
-           print '<p>A problem has occured, please try again later.</p>';
+           return '<p>A problem has occured, please try again later.</p>';
         }
       }
       else {
-        print '<p>We didn&rsquo;t find any matches for you!  Please try again later.</p>';
+        return '<p>We didn&rsquo;t find any matches for you!  Please try again later.</p>';
       }
 
-      //compose email with potential matches
-      
-      
       exit;
 
     }
@@ -266,17 +247,13 @@
 
     public function getMessageForm($m,$c,$h) {
 
-      $form = '';
-      $form .= '<p>Send your match an introduction.  Tell them how you found this site and include some interesting details about yourself.</p>';
-      $form .= '<form id="message">';
-      $form .= '<textarea name="message"></textarea>';
-      $form .= '<input type="button" name="submitMessage" id="submitMessage" value="Send!" />';
-      $form .= '<input type="hidden" name="receiverGuid" value="' . $m . '" />';
-      $form .= '<input type="hidden" name="callerGuid" value="' . $c . '" />';
-      $form .= '<input type="hidden" name="h" value="' . $h . '" />';
-      $form .= '</form>';
+      $ret = array();
+      $ret['instructions'] = 'Send your match an introduction.  Tell them how you found this site and include some interesting details about yourself.';
+      $ret['m'] = $m;
+      $ret['c'] = $c;
+      $ret['h'] = $h;
 
-      return $form;      
+      return $ret;      
 
     }
 

@@ -1,8 +1,6 @@
 $(document).ready(function(){
 
-  //var url = '../php/handleColors.php';
-
-  $(document).on('click', '.scheme', function(){
+  $(document).on('touchstart click', '.scheme', function(){
 
     var schemeId = $(this).attr('id');
 
@@ -11,12 +9,12 @@ $(document).ready(function(){
     var requestData = {'id':schemeId};
 
     $.post(url,requestData, function(data) {
-      $("#container").empty().append(data);
+      $("#main").empty().append(data);
     });
 
   });
 
-  $(document).on('click', '#submit', function(){
+  $(document).on('touchstart click', '#submit', function(){
 
     var url = '/php/handleColors.php';
 
@@ -38,11 +36,11 @@ $(document).ready(function(){
     var requestData = o;
 
     $.post(url,requestData, function(data) {
-      $("#container").empty().append(data);
+      $("#main").empty().append(data);
     });
   });
 
-  $(document).on('click', '#submitMessage', function(){
+  $(document).on('click touchstart', '#submitMessage', function(){
 
     var url = '/php/handleColors.php';
     var o = {'submitMessage': true};
@@ -63,7 +61,7 @@ $(document).ready(function(){
     var requestData = o;
 
     $.post(url,requestData, function(data) {
-      $("#container").empty().append(data);
+      $("#main").empty().append(data);
     });
 
   });

@@ -14,25 +14,30 @@ body, p, a, div, span {
 }
 
 /* line 14, ../sass/colors.scss */
+#main {
+  width: 100%;
+}
+
+/* line 18, ../sass/colors.scss */
 .scheme {
   width: 660px;
   height: 220px;
   margin-bottom: 40px;
 }
 
-/* line 20, ../sass/colors.scss */
+/* line 24, ../sass/colors.scss */
 .color {
   width: 220px;
   height: 220px;
   float: left;
 }
 
-/* line 26, ../sass/colors.scss */
+/* line 30, ../sass/colors.scss */
 .emailBox, .submitBox, .emailLabel, .messageArea {
   padding-top: 2%;
 }
 
-/* line 30, ../sass/colors.scss */
+/* line 34, ../sass/colors.scss */
 .footer {
   margin-left: auto;
   margin-right: auto;

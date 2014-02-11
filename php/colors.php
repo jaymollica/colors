@@ -237,15 +237,15 @@
 
       $to = $visitorEmail;
 
-      $subject = 'Your color matches have arrived!';
-      $from = 'Do-Not-Reply@color.com';
+      $subject = 'Your matches have arrived!';
+      $from = 'info@vaguespac.es';
 
       $headers = "From: " . $from . "\r\n";
       $headers .= "MIME-Version: 1.0\r\n";
       $headers .= "Content-Type: text/html; charset=ISO-8859-1\r\n";
 
       $message = '<html><body>';
-      $message .= '<p>Below is a list of people who best match your color preferences.  The links will take you to a form where you can contact them if you wish.</p>';
+      $message .= '<p>Below is a list of people who best match your preferences.  The links will take you to a form where you can contact them if you wish.</p>';
 
       $message .= '<ol>';
       $i = 0;
@@ -319,7 +319,7 @@
               $to = $email_r;
 
               $subject = 'Someone has sent you a message!';
-              $from = 'Do-Not-Reply@color.com';
+              $from = 'info@vaguespac.es';
 
               $headers = "From: " . $from . "\r\n";
               $headers .= "MIME-Version: 1.0\r\n";

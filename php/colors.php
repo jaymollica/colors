@@ -96,6 +96,8 @@
 
       //explode status so that m4m splits into m,m
       $parts = explode("4",$status);
+      $gender = $parts[0];
+      $preference = $parts[1];
 
       //check to see if the email was already entered, if so update, if not create new entry
       $sql = $this->_db->prepare("SELECT * FROM visitors WHERE email = ?");
@@ -105,7 +107,7 @@
         $uid = $res['id'];
         $_SESSION['guid'] = $res['guid'];
         $sql = $this->_db->prepare("UPDATE visitors SET session_id = ?, num_entries = num_entries + 1, gender = ?, looking_for = ?, metro_id = ? WHERE email = ?");
-        $sql->execute(array($_SESSION['visit_id'],$parts[0],$parts[1],$metro,$email));
+        $sql->execute(array($_SESSION['visit_id'],$gender,$preference,$metro,$email));
       }
       else {
         while(TRUE) {
@@ -138,11 +140,18 @@
         }
       }
 
-      //return an array of matched email addresses
-      $matchedEmails = $this->getMatchesA($uid);
+      $userInfo = array(
+        'uid' => $uid,
+        'metro_id' => $metro,
+        'gender' => $gender,
+        'preference' => $preference
+      );
 
-      if(!empty($matchedEmails)) {
-        $mail = $this->emailMatches($matchedEmails,$email);
+      //return an array of matched email addresses
+      $matches = $this->getMatchesA($userInfo);
+
+      if(!empty($matches)) {
+        $mail = $this->emailMatches($matches,$email);
 
         if($mail) {
           return '<p>Thank you, an email with any potential matches should arrive soon.</p>';
@@ -159,7 +168,9 @@
 
     }
 
-    public function getMatchesA($uid) {
+    public function getMatchesA($userInfo) {
+
+      extract($userInfo);
 
       //get a list of schemes the user likes, then return all users who also like those schemes
       $sql = $this->_db->prepare("SELECT scheme_id FROM scheme_likes WHERE user_id = ?");
@@ -183,6 +194,9 @@
         
           ksort($counts);
 
+          //we need two sets of matches, one for the universal matches regardless of the visitors location or preference, another that considers location and preference
+          
+          //first the universal matches
           $i = 0;
           foreach($counts AS $key => $val) {
 
@@ -191,7 +205,7 @@
 
             $res = $sql->fetch(PDO::FETCH_ASSOC);
 
-            $matches[] = $res;
+            $matches['universal'][] = $res;
 
             $i++;
 
@@ -201,12 +215,55 @@
 
           }
 
+          //second set refined to consider preference and location
+          $i = 0;
+          foreach($counts AS $key => $val) {
+
+            $sql = $this->_db->prepare("SELECT * FROM visitors WHERE id = ? AND gender = ? AND metro_id = ?");
+            $sql->execute(array($key,$preference,$metro_id));
+
+            $res = $sql->fetch(PDO::FETCH_ASSOC);
+
+            $matches['refined'][] = $res;
+
+            $i++;
+
+            if($i >= 4) {
+              break;
+            }
+
+          }
+
+          //now we gotta check to see if the matched people prefer this visitor's gender
+          $i = 0;
+          foreach($matches['refined'] AS &$r) {
+            if($r['looking_for'] != $gender) {
+              unset($matches['refined'][$i]);
+            }
+            $i++;
+          }
+
           //add caller, receiver and hash to table to let messaging happen
           $availableHash = $this->makeAvailable($matches);
 
-          foreach($matches AS &$m) {
+          foreach($matches['universal'] AS &$m) {
             $m['availableHash'] = $availableHash;
             $m['caller_guid'] = $_SESSION['guid'];
+
+            $sql = $this->_db->prepare("SELECT * FROM metro_areas WHERE id = ?");
+            $sql->execute(array($m['metro_id']));
+            $res = $sql->fetch(PDO::FETCH_ASSOC);
+            $m['metro_name'] = $res['metro_area'];
+          }
+
+          foreach($matches['refined'] AS &$m) {
+            $m['availableHash'] = $availableHash;
+            $m['caller_guid'] = $_SESSION['guid'];
+
+            $sql = $this->_db->prepare("SELECT * FROM metro_areas WHERE id = ?");
+            $sql->execute(array($m['metro_id']));
+            $res = $sql->fetch(PDO::FETCH_ASSOC);
+            $m['metro_name'] = $res['metro_area'];
           }
 
           return $matches;
@@ -220,13 +277,23 @@
 
     }
 
+    //make it possible for people to connect by adding entries to the available_messages table
     public function makeAvailable($matches) {
       $caller_guid = $_SESSION['guid'];
       $hash = $this->makeHash();
 
-      foreach($matches AS $m) {
-        $sql = $this->_db->prepare("INSERT INTO available_messages (caller_guid,receiver_guid,hash) VALUES (?,?,?)");
-        $sql->execute(array($caller_guid,$m['guid'],$hash));
+      if(!empty($matches['universal'])) {
+        foreach($matches['universal'] AS $m) {
+          $sql = $this->_db->prepare("INSERT INTO available_messages (caller_guid,receiver_guid,hash) VALUES (?,?,?)");
+          $sql->execute(array($caller_guid,$m['guid'],$hash));
+        }
+      }
+
+      if(!empty($matches['refined'])) {
+        foreach($matches['refined'] AS $m) {
+          $sql = $this->_db->prepare("INSERT INTO available_messages (caller_guid,receiver_guid,hash) VALUES (?,?,?)");
+          $sql->execute(array($caller_guid,$m['guid'],$hash));
+        }
       }
 
       return $hash;
@@ -234,6 +301,9 @@
     }
 
     public function emailMatches($matches,$visitorEmail) {
+
+      $docroot = $_SERVER['DOCUMENT_ROOT'];
+      $host = $_SERVER['HTTP_HOST'];
 
       $to = $visitorEmail;
 
@@ -247,19 +317,35 @@
       $message = '<html><body>';
       $message .= '<p>Below is a list of people who best match your preferences.  The links will take you to a form where you can contact them if you wish.</p>';
 
+      //Top matches considering location and preference
+      if(!empty($matches['refined'])) {
+        $message .= '<p>Here are your top matches in your area:</p>';
+        $message .= '<ol>';
+        foreach($matches['refined'] AS $m) {
+
+          $message .= '<li><a href = "http://' . $host . '/php/handleColors.php?m=' . $m['guid'] . '&c=' . $m['caller_guid'] . '&h=' . $m['availableHash'] . '">' . $m['guid'] . '</a> (' . $m['gender'] . ' - ' . $m['metro_name'] . ').</li>';
+
+        }
+      }
+      else {
+        $message .= '<p>There were no suitable matches in your area.  Please try again later.</p>';
+      }
+
+      $message .= '</ol>';
+
+      //list off the universal matches
+      $message .= '<p>Here are your best matches regardless of your location or gender preference:</p>';
       $message .= '<ol>';
-      $i = 0;
+      foreach($matches['universal'] AS $m) {
 
-      foreach($matches AS $m) {
-
-        $docroot = $_SERVER['DOCUMENT_ROOT'];
-        $host = $_SERVER['HTTP_HOST'];
-
-        $message .= '<li><a href = "http://' . $host . '/php/handleColors.php?m=' . $m['guid'] . '&c=' . $m['caller_guid'] . '&h=' . $m['availableHash'] . '">' . $m['guid'] . '</a></li>';
+        $message .= '<li><a href = "http://' . $host . '/php/handleColors.php?m=' . $m['guid'] . '&c=' . $m['caller_guid'] . '&h=' . $m['availableHash'] . '">' . $m['guid'] . '</a> (' . $m['gender'] . ' - ' . $m['metro_name'] . ').</li>';
 
       }
 
       $message .= '</ol>';
+
+
+
       $message .= '</body></html>';
 
       //print $message;

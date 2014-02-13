@@ -1,5 +1,5 @@
 $(document).ready(function(){
-
+  
   $(document).on('touchstart click', '.scheme', function(){
 
     var schemeId = $(this).attr('id');
